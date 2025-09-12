@@ -2,20 +2,20 @@ import { database } from './appwrite';
 
 const databaseService = {
     //List Documents
-    async listDocuments(dbId: any, colId: any) {
+    async listDocuments(dbId, colId, queries = []) {
         try {
-            const response = await database.listDocuments(dbId, colId);
-            return response.documents || [];
-        } catch (error: any) {
+            const response = await database.listDocuments(dbId, colId, queries);
+            return {data: response.documents || [], error: null};
+        } catch (error) {
             console.error('Error fetching documents: ', error.message);
             return {error: error.message};
         }
     },
     // Create Documents
-    async createDocument(dbId: any, colId: any, data: any, id: any = null) {
+    async createDocument(dbId, colId, data, id = null) {
         try {
             return await database.createDocument(dbId, colId, id || undefined, data);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error creating document', error.message);
             return {
                 error: error.message
@@ -24,10 +24,10 @@ const databaseService = {
     },
 
     // Update Document
-    async updateDocument(dbId: any, colId: any, id: any, data: any) {
+    async updateDocument(dbId, colId, id, data) {
         try {
             return await database.updateDocument(dbId, colId, id, data);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error updating document', error.message);
             return {
                 error: error.message,
@@ -36,11 +36,11 @@ const databaseService = {
     },
 
     // Delete Document
-    async deleteDocument(dbId: any, colId: any, id: any) {
+    async deleteDocument(dbId, colId, id) {
         try {
             await database.deleteDocument(dbId, colId, id);
             return {success: true};
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error deleting document', error.message);
             return {
                 error: error.message,

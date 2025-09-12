@@ -13,7 +13,7 @@ const AddNoteModal = ({
   newNote,
   setNewNote,
   addNote,
-}: any) => {
+}) => {
   return (
     <Modal
       visible={modalVisible}

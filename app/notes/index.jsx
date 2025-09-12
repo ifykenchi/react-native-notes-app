@@ -1,6 +1,8 @@
 import AddNoteModal from "@/components/AddNoteModal";
 import NoteList from "@/components/NoteLIst";
+import { useAuth } from "@/contexts/AuthContext";
 import noteService from "@/services/noteService";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,23 +14,34 @@ import {
 } from "react-native";
 
 const NoteScreen = () => {
-  const [notes, setNotes] = useState([]) as any;
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  const [notes, setNotes] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchNotes();
-  }, []);
+    if (!authLoading && !user) {
+      router.replace('/auth');
+    }
+  }, [user, authLoading]);
+
+  useEffect(() => {
+    if (user) {
+      fetchNotes();
+    }
+  }, [user]);
 
   const fetchNotes = async () => {
     setLoading(true);
-    const response = await noteService.getNotes();
+    const response = await noteService.getNotes(user.$id);
 
     if (response.error) {
       setError(response.error);
-      Alert.alert("Error", response.error);
+      Alert.alert('Error', response.error);
     } else {
       setNotes(response.data);
       setError(null);
@@ -39,36 +52,36 @@ const NoteScreen = () => {
 
   // Add New Note
   const addNote = async () => {
-    if (newNote.trim() === "") return;
+    if (newNote.trim() === '') return;
 
-    const response = await noteService.addNote(newNote);
+    const response = await noteService.addNote(user.$id, newNote);
 
     if (response.error) {
-      Alert.alert("Error", response.error);
+      Alert.alert('Error', response.error);
     } else {
       setNotes([...notes, response.data]);
     }
 
-    setNewNote("");
+    setNewNote('');
     setModalVisible(false);
   };
 
   // Delete Note
-  const deleteNote = async (id: any) => {
-    Alert.alert("Delete Note", "Are you sure you want to delete this note?", [
+  const deleteNote = async (id) => {
+    Alert.alert('Delete Note', 'Are you sure you want to delete this note?', [
       {
-        text: "Cancel",
-        style: "cancel",
+        text: 'Cancel',
+        style: 'cancel',
       },
       {
-        text: "Delete",
-        style: "destructive",
+        text: 'Delete',
+        style: 'destructive',
         onPress: async () => {
           const response = await noteService.deleteNote(id);
           if (response.error) {
-            Alert.alert("Error", response.error);
+            Alert.alert('Error', response.error);
           } else {
-            setNotes(notes.filter((note: any) => note.$id !== id));
+            setNotes(notes.filter((note) => note.$id !== id));
           }
         },
       },
@@ -76,18 +89,18 @@ const NoteScreen = () => {
   };
 
   // Edit Note
-  const editNote = async (id: any, newText: any) => {
+  const editNote = async (id, newText) => {
     if (!newText.trim()) {
-      Alert.alert("Error", "Note text cannot be empty");
+      Alert.alert('Error', 'Note text cannot be empty');
       return;
     }
 
-    const response = (await noteService.updateNote(id, newText)) as any;
+    const response = await noteService.updateNote(id, newText);
     if (response.error) {
-      Alert.alert("Error", response.error);
+      Alert.alert('Error', response.error);
     } else {
-      setNotes((prevNotes: any) =>
-        prevNotes.map((note: any) =>
+      setNotes((prevNotes) =>
+        prevNotes.map((note) =>
           note.$id === id ? { ...note, text: response.data.text } : note
         )
       );
@@ -97,11 +110,16 @@ const NoteScreen = () => {
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size='large' color='#007bff' />
       ) : (
         <>
           {error && <Text style={styles.errorText}>{error}</Text>}
-          <NoteList notes={notes} onDelete={deleteNote} onEdit={editNote} />
+
+          {notes.length === 0 ? (
+            <Text style={styles.noNotesText}>You have no notes</Text>
+          ) : (
+            <NoteList notes={notes} onDelete={deleteNote} onEdit={editNote} />
+          )}
         </>
       )}
 
